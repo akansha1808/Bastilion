@@ -1,0 +1,67 @@
+FROM --platform=linux/amd64 alpine:latest as builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    build-base \
+    cairo-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    wget \
+    autoconf \
+    automake \
+    libtool \
+    ffmpeg \
+    ffmpeg-dev \
+    openssl-dev \
+    libvncserver-dev \
+    pulseaudio-dev \
+    libwebp-dev \
+    libssh2-dev \
+    pango-dev \
+    libvorbis-dev \
+    freerdp-dev \
+    libwebsockets-dev \
+    x264-dev \
+    x265-dev \
+    ca-certificates
+
+# Download source file first
+ADD https://downloads.apache.org/guacamole/1.5.3/source/guacamole-server-1.5.3.tar.gz /tmp/
+
+# Build guacamole-server from source
+RUN cd /tmp && \
+    tar -xzf guacamole-server-1.5.3.tar.gz && \
+    cd guacamole-server-1.5.3 && \
+    autoreconf -fi && \
+    CFLAGS="-Wno-error" ./configure \
+        --with-init-dir=/etc/init.d \
+        --with-ssl \
+        --with-webp \
+        --with-vorbis \
+        --enable-recording && \
+    make && \
+    make install
+
+# Start with clean guacd image for final stage
+FROM --platform=linux/amd64 guacamole/guacd
+
+USER root
+
+# Install FFmpeg libraries needed by guacenc
+RUN apk add --no-cache \
+    ffmpeg \
+    ffmpeg-dev \
+    ffmpeg-libs
+
+# Copy built files from builder
+COPY --from=builder /usr/local/lib/ /usr/local/lib/
+COPY --from=builder /usr/local/sbin/ /usr/local/sbin/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Create recordings directory and update library cache
+RUN mkdir -p /recordings && \
+    chmod 777 /recordings && \
+    ldconfig || true
+
+# Switch back to guacd user for security
+USER guacd 

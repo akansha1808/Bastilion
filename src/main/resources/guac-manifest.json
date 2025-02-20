@@ -1,0 +1,8 @@
+{
+    "guacamoleVersion" : "1.5.5",
+    "name"      : "Bastillion Audit Extension",
+    "namespace" : "bastillion-audit",
+    "listeners" : [
+        "io.bastillion.manage.guacamole.BastillionGuacamoleListener"
+    ]
+} 

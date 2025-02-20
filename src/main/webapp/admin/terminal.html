@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal</title>
+    <script type="text/javascript" th:src="@{/guacamole-common-js/guacamole-common-js/all.min.js}"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="display"></div>
+
+    <script>
+        var guac = null;
+        var keyboard = null;
+        var mouse = null;
+        var isConnected = false;
+
+        function connect() {
+            try {
+                // Parse URL parameters
+                var params = new URLSearchParams(window.location.search);
+                
+                // Create tunnel to the servlet
+                var tunnel = new Guacamole.HTTPTunnel("../admin/tunnel");
+                guac = new Guacamole.Client(tunnel);
+
+                // Get display div
+                var display = document.getElementById("display");
+                display.appendChild(guac.getDisplay().getElement());
+
+                // Mouse
+                mouse = new Guacamole.Mouse(guac.getDisplay().getElement());
+                mouse.onmousedown = 
+                mouse.onmouseup   = 
+                mouse.onmousemove = function(mouseState) {
+                    if (isConnected) {
+                        guac.sendMouseState(mouseState);
+                    }
+                };
+
+                // Keyboard
+                keyboard = new Guacamole.Keyboard(document);
+                keyboard.onkeydown = function (keysym) {
+                    if (isConnected) {
+                        guac.sendKeyEvent(1, keysym);
+                        event.preventDefault();
+                        return false;
+                    }
+                };
+
+                keyboard.onkeyup = function (keysym) {
+                    if (isConnected) {
+                        guac.sendKeyEvent(0, keysym);
+                        event.preventDefault();
+                        return false;
+                    }
+                };
+
+                // Error handler
+                guac.onerror = function(error) {
+                    console.error("Guacamole error:", error);
+                    isConnected = false;
+                    alert("Connection error: " + (error.message || "Unknown error"));
+                    window.close();
+                };
+
+                // State change handler
+                guac.onstatechange = function(state) {
+                    console.log("Connection state changed:", state);
+                    if (state === 3) { // Connected
+                        isConnected = true;
+                        display.focus();
+                    } else {
+                        isConnected = false;
+                    }
+                };
+
+                // Connect
+                guac.connect(params.toString());
+
+                // Session cleanup
+                window.onunload = function() {
+                    if (guac) {
+                        isConnected = false;
+                        if (keyboard) {
+                            keyboard.reset();
+                        }
+                        guac.disconnect();
+                    }
+                };
+
+                // Focus the display
+                display.focus();
+            } catch (e) {
+                console.error("Connection error:", e);
+                alert("Failed to connect: " + e.message);
+                window.close();
+            }
+        }
+
+        // Prevent default keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (isConnected && (e.ctrlKey || e.altKey || e.metaKey || e.key === 'Enter')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Initialize connection when window loads
+        window.onload = connect;
+    </script>
+</body>
+</html> 

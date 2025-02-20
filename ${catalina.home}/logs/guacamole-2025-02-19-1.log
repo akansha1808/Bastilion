@@ -1,0 +1,4 @@
+2025-02-19 17:20:40.419 [qtp52505597-65] DEBUG org.apache.guacamole.net.InetGuacamoleSocket - Connecting to guacd at localhost:4822.
+2025-02-19 17:20:40.761 [qtp52505597-65] DEBUG org.apache.guacamole.servlet.GuacamoleHTTPTunnelServlet - Registered tunnel "f4bfd379-7b1a-4922-bc5b-b6448817983b".
+2025-02-19 17:20:49.466 [qtp52505597-72] DEBUG org.apache.guacamole.servlet.GuacamoleHTTPTunnelServlet - Deregistered tunnel "f4bfd379-7b1a-4922-bc5b-b6448817983b".
+2025-02-19 17:20:49.469 [qtp52505597-72] DEBUG org.apache.guacamole.net.InetGuacamoleSocket - Closing socket to guacd.

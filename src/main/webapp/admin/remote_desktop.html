@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta th:replace="~{_res/inc/header}">
+    <script type="text/javascript" th:src="@{/guacamole-common-js/guacamole-common-js/all.min.js}"></script>
+    <style>
+        #display {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        .guac-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .connection-form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{_res/inc/navigation}"></div>
+    <div class="container">
+        <h3>Remote Connection</h3>
+        <form onsubmit="return false;" class="connection-form">
+            <div class="form-group">
+                <label for="hostname">Hostname:</label>
+                <input type="text" id="hostname" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="protocol">Protocol:</label>
+                <select id="protocol" class="form-control" onchange="toggleCredentials()">
+                    <option value="ssh">SSH</option>
+                    <option value="rdp">RDP</option>
+                    <option value="vnc">VNC</option>
+                </select>
+            </div>
+            <div id="credentials">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" class="form-control">
+                </div>
+            </div>
+            <button type="button" id="connectButton" onclick="openTerminalWindow()" class="btn btn-primary">Connect</button>
+        </form>
+        <div id="display"></div>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        var guac = null;
+        var keyboard = null;
+        var mouse = null;
+        var isInputFocused = false;
+        var isConnected = false;
+
+        // Add input focus handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            var inputs = document.querySelectorAll('input');
+            inputs.forEach(function(input) {
+                input.addEventListener('focus', function() {
+                    isInputFocused = true;
+                });
+                input.addEventListener('blur', function() {
+                    isInputFocused = false;
+                });
+                // Prevent form submission on enter
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('connectButton').click();
+                    }
+                });
+            });
+
+            // Prevent spacebar from triggering button
+            document.getElementById('connectButton').addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        function toggleCredentials() {
+            var protocol = document.getElementById('protocol').value;
+            var credentials = document.getElementById('credentials');
+            
+            // Show username for SSH and RDP, hide for VNC
+            var usernameField = document.querySelector('#credentials .form-group:first-child');
+            usernameField.style.display = (protocol === 'vnc') ? 'none' : 'block';
+            
+            // Add terminal styling for SSH
+            var display = document.getElementById('display');
+            if (protocol === 'ssh') {
+                display.classList.add('terminal-display');
+            } else {
+                display.classList.remove('terminal-display');
+            }
+        }
+
+        function openTerminalWindow() {
+            var hostname = document.getElementById('hostname').value;
+            var protocol = document.getElementById('protocol').value;
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            var csrf = /*[[${session._csrf}]]*/ '';
+
+            // Create URL with parameters
+            var params = new URLSearchParams({
+                hostname: hostname,
+                protocol: protocol,
+                username: username,
+                password: password,
+                _csrf: csrf
+            });
+
+            // Open new window
+            var terminalWindow = window.open('terminal.html?' + params.toString(), 
+                                          'terminal_' + Date.now(), 
+                                          'width=800,height=600,menubar=no,toolbar=no,location=no,status=no');
+
+            if (terminalWindow) {
+                terminalWindow.focus();
+            } else {
+                alert('Please allow pop-ups for this site to open terminal windows.');
+            }
+        }
+
+        // Prevent default keyboard shortcuts only when not in input fields
+        document.addEventListener('keydown', function(e) {
+            if (!isInputFocused && isConnected && (e.ctrlKey || e.altKey || e.metaKey || e.key === 'Enter')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Initialize credentials visibility
+        toggleCredentials();
+    /*]]>*/
+    </script>
+</body>
+</html>

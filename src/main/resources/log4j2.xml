@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <!-- Define the base log directory using system property -->
+    <Properties>
+        <Property name="LOG_DIR">${sys:user.home}/bastillion/logs</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+        </Console>
+        
+        <!-- Guacamole specific logging with custom path -->
+        <RollingFile name="guacamole-log" 
+                     fileName="${LOG_DIR}/guacamole.log"
+                     filePattern="${LOG_DIR}/guacamole-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+        
+        <!-- Session activity logging with custom path -->
+        <RollingFile name="session-log" 
+                     fileName="${LOG_DIR}/sessions.log"
+                     filePattern="${LOG_DIR}/sessions-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Guacamole specific logging -->
+        <Logger name="org.apache.guacamole" level="debug" additivity="false">
+            <AppenderRef ref="guacamole-log"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+        
+        <!-- Session activity logging -->
+        <Logger name="io.bastillion.manage.servlet.GuacamoleTunnelServlet" level="info">
+            <AppenderRef ref="session-log"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+        
+        <Logger name="io.bastillion.manage.guacamole.BastillionGuacamoleListener" level="info">
+            <AppenderRef ref="session-log"/>
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Root level="warn">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

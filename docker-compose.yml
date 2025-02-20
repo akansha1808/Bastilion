@@ -1,0 +1,60 @@
+####################################################################################
+# docker-compose file for Apache Guacamole with guacenc support
+#
+# Apache Guacamole is a clientless remote desktop gateway. It supports standard
+# protocols like VNC, RDP, and SSH. We call it clientless because no plugins or
+# client software are required. Thanks to HTML5, once Guacamole is installed on
+# a server, all you need to access your desktops is a web browser.
+####################################################################################
+
+version: '3'
+
+# networks
+# create a network 'guacnetwork_compose' in mode 'bridged'
+networks:
+  guacnetwork_compose:
+    driver: bridge
+
+# services
+services:
+  # guacd with recording support
+  guacd:
+    container_name: guacd_compose
+    build:
+      context: .
+      dockerfile: Dockerfile.guacd
+      tags:
+        - guacamole-guacd-recording:latest    # This ensures the image gets tagged
+    image: guacamole-guacd-recording:latest   # This references the tagged image
+    networks:
+      - guacnetwork_compose
+    restart: always
+    platform: linux/amd64
+    volumes:
+      - ./drive:/drive:rw
+      - ./record:/record:rw
+      - ~/bastillion/recordings:/recordings:rw
+    ports:
+      - 4822:4822
+
+####################################################################################
+# Initial Setup Instructions:
+#
+# 1. Create required directories:
+#    mkdir -p ./drive ./record ~/bastillion/recordings
+#    chmod 777 ./drive ./record ~/bastillion/recordings
+#
+# 2. Start the services:
+#    docker compose down
+#    docker compose build guacd
+#    docker compose up -d
+#
+# 3. Access Guacamole:
+#    http://localhost:8089/guacamole/
+#
+# Default credentials:
+#   Username: guacadmin
+#   Password: guacadmin
+#
+# Make sure to change the default password immediately!
+#################################################################################### 

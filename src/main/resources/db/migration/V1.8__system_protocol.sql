@@ -1,0 +1,2 @@
+ALTER TABLE systems 
+ADD COLUMN IF NOT EXISTS protocol VARCHAR(10) DEFAULT 'ssh'; 
